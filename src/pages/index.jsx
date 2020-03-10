@@ -1,17 +1,64 @@
+/* eslint-disable react/prop-types */
+import { graphql, Link } from "gatsby";
+import Img from "gatsby-image";
 import React from "react";
 import styled from "styled-components";
-import { useSiteMetadata } from "../hooks/useSiteMetadata";
+import Layout from "../components/Layout";
 
-const StyledH1 = styled.h1`
-  color: rebeccapurple;
+const IndexWrapper = styled.main``;
+
+const PostWrapper = styled.main``;
+
+const Image = styled(Img)`
+  border-radius: 5px;
 `;
 
-export default () => {
-  const { title, description } = useSiteMetadata();
+export default ({ data }) => {
   return (
-    <>
-      <StyledH1>{title}</StyledH1>
-      <p>{description}</p>
-    </>
+    <Layout>
+      <IndexWrapper>
+        {data.allMdx.nodes.map(({ id, excerpt, frontmatter, fields }) => (
+          <PostWrapper key={id}>
+            <Link to={fields.slug}>
+              {frontmatter.cover ? (
+                <Image sizes={frontmatter.cover.childImageSharp.sizes} />
+              ) : null}
+              <h2>{frontmatter.title}</h2>
+              <p>{frontmatter.date}</p>
+              <p>{excerpt}</p>
+            </Link>
+          </PostWrapper>
+        ))}
+      </IndexWrapper>
+    </Layout>
   );
 };
+
+export const query = graphql`
+  query SITE_INDEX_QUERY {
+    allMdx(
+      sort: { fields: [frontmatter___date], order: DESC }
+      filter: { frontmatter: { published: { eq: true } } }
+    ) {
+      nodes {
+        id
+        excerpt(pruneLength: 250)
+        frontmatter {
+          title
+          date(formatString: "Do MMMM YYYY")
+          cover {
+            publicURL
+            childImageSharp {
+              sizes(maxWidth: 2000, traceSVG: { color: "#639" }) {
+                ...GatsbyImageSharpSizes_tracedSVG
+              }
+            }
+          }
+        }
+        fields {
+          slug
+        }
+      }
+    }
+  }
+`;
